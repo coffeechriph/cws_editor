@@ -1,0 +1,18 @@
+DONE
+
+TODO
+-Material creation
+	-Allow to specify shader and texture from files and display a simple result in a panel.
+	-Make sure that shaders and textures that are used multiple times are only loaded once.
+-Project managment
+	-New Project
+	-Load Project
+	-Save Project
+-Terrain editing
+	-Simple brushes - Smooth/sharp circle, rectangle
+	-Simple texture painting
+		-Support up to 4 different textures per terrain (to begin with)
+-Entity creation / placement
+	-Create entity type and choose material + mesh
+	-Be able to choose entities and add them to the scene
+		-If cursor is above terrain snap the entity to the terrain

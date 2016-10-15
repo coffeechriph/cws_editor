@@ -1,0 +1,18 @@
+#!/bin/bash
+#Compile cws
+reset
+gcc \
+	-I/home/chriph/Projects/cws/include/ \
+	-L/home/chriph/Projects/cws/bin \
+	./include/materialEdit.c \
+	./include/terrainEdit.c \
+	./include/toolbar.c \
+	./include/scene.c \
+	./include/main.c \
+	-lcws \
+	-o ./bin/game \
+	-g \
+	-rdynamic \
+	-Wall \
+	-ldl \
+	-lm

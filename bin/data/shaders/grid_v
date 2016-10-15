@@ -1,0 +1,43 @@
+#version 330
+
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 uv;
+layout (location = 3) in vec3 color;
+
+layout (std140) uniform LightData
+{
+	vec4 ambient_light;
+	vec4 lights_count;
+
+	mat4 shadow_matrices_lod[4];
+	mat4 spotlight_matrices[8];
+
+	vec4 dirlights_dir[2];
+	vec4 dirlights_color[2];
+
+	vec4 pointlights_pos[16];
+	vec4 pointlights_intensity[16];
+
+	vec4 spotlights_pos[16];
+	vec4 spotlights_dir[16];
+	vec4 spotlights_intensity[16];
+	vec4 spotlights_conedata[16];
+};
+
+uniform mat4 mvp_matrix;
+uniform mat4 projection_matrix;
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
+
+out vec3 Pos;
+out vec3 Color;
+out vec2 Uv;
+
+void main()
+{
+	gl_Position = (mvp_matrix) * vec4(pos,1.0f);
+	Color = clamp(color, 0.0f, 1.0f);
+	Pos = (vec4(pos,1) * (model_matrix)).xyz;
+	Uv = uv;
+}
