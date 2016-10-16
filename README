@@ -1,0 +1,4 @@
+Scene editor written in C using the cws game library.
+
+[Features]
+Terrain editing (raise/lower, brush size/strength)
