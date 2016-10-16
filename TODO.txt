@@ -1,4 +1,5 @@
 DONE
+Terrain highlighting - see where cursor is on the terrain
 
 TODO
 -Material creation
@@ -8,10 +9,13 @@ TODO
 	-New Project
 	-Load Project
 	-Save Project
--Terrain editing
-	-Simple brushes - Smooth/sharp circle, rectangle
++Terrain editing
+	+Simple brushes - Smooth/sharp circle, rectangle
+	+Smoothing tool
 	-Simple texture painting
 		-Support up to 4 different textures per terrain (to begin with)
+	+Use delta cursor position when editing terrain instead of single position
+	  This will allow users to move the mouse quickly without losing editing precision
 -Entity creation / placement
 	-Create entity type and choose material + mesh
 	-Be able to choose entities and add them to the scene

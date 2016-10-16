@@ -5,11 +5,6 @@ cwsMesh gridMesh;
 cwsMaterial gridMaterial;
 cwsTexture2D gridTexture;
 
-//Cube cursor
-cwsRenderer *cursorRenderer;
-cwsMesh cursorMesh;
-cwsMaterial cursorMaterial;
-
 cwsDirLight *sceneLight;
 cwsCamera *sceneCam;
 
@@ -29,25 +24,17 @@ void init_scene()
     gridRenderer->position = (vec3){.x = 0, .y = 0.0f, .z = 0};
     gridRenderer->scale = (vec3){.x = 100, .y = 0, .z = 100};
 
-    cwsMaterialInit(cursorMaterial);
-    cwsShaderFromfile(&cursorMaterial.shader, "./data/shaders/single_v", "./data/shaders/single_f");
-    cwsCubeMesh(&cursorMesh);
-    cursorRenderer = cwsNewRenderer(&cursorMaterial, &cursorMesh);
-    cursorRenderer->position = (vec3){.x = 0, .y = 0, .z = 0};
-    cursorRenderer->scale = (vec3){.x = 1, .y = 1, .z = 1};
-    cwsUpdateBounds(cursorRenderer);
-    
     init_terrainEdit();
     
     sceneLight = cwsNewDirLight();
     sceneLight->rot = (vec3){35,45,0};
 }
 
+vec2 last_local = (vec2){.x = -1, .y = -1};
 void update_scene()
 {
     if(selected_tool == TOOL_TERRAIN_EDIT)
     {
-        update_terrain_edit();
         ray r = cwsBuildPickRay(sceneCam);
         aabb ab;
         
@@ -55,10 +42,9 @@ void update_scene()
         ab.extent = (vec3){100,0.1,100};
         ray_hitinfo info = ray_aabb_test(r,ab);
         
+        update_terrain_edit((vec2){info.point.x, info.point.z});   
         if(info.hit)
         {
-            cursorRenderer->position = (vec3){.x = info.point.x, .y = 0.0f, .z = info.point.z};
-            
             if(get_mouse_state(0) == MOUSE_PRESSED)
             {
                 vec2 local = (vec2){
@@ -66,7 +52,12 @@ void update_scene()
                     info.point.z - dummy_terrain->renderer->position.z
                 };
                 
-                terrain_raise(dummy_terrain, local);
+                vec2 d = vec2_sub(last_local, local);
+                if(vec2_length(d) < 2)
+                {
+                    terrain_edit(dummy_terrain, last_local, local);
+                }
+                last_local = local;
             }
         }
     }
@@ -74,7 +65,6 @@ void update_scene()
 
 void destroy_scene()
 {
-    cwsDeleteMesh(&cursorMesh);
     cwsDeleteMesh(&gridMesh);
     cwsDeleteShader(&gridMaterial.shader);
     cwsDeleteMaterial(&gridMaterial);

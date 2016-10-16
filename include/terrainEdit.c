@@ -8,11 +8,13 @@ cwsGuiSlider *strengthSlider;
 cwsGuiSlider *brushSizeSlider;
 cwsGuiSlider *limitHeightSlider;
 cwsGuiCheckbox *limitHeightBox;
+cwsGuiSlider *brushTypeSlider;
+cwsText *brushTypeText, *strengthText, *brushSizeText, *heightLimitText;
 
 Terrain *dummy_terrain;
 
 i32 brushType = BRUSH_CIRCLE;
-i32 brushStrength = 1;
+f32 brushStrength = 0.01f;
 i32 brushSize = 1;
 
 void init_terrainEdit()
@@ -24,15 +26,15 @@ void init_terrainEdit()
     terrainEditSurface->renderer->fill = true;
   
     strengthSlider = cwsSurfaceAddSlider(terrainEditSurface);
-    strengthSlider->pos = (vec2){.x = 10, .y = 2};
+    strengthSlider->pos = (vec2){.x = 10, .y = 30};
     strengthSlider->size = (vec2){.x = 180, .y = 25};
-    strengthSlider->min = -10;
-    strengthSlider->max = 10;
+    strengthSlider->min = -20;
+    strengthSlider->max = 20;
     strengthSlider->value = 1;
     cwsRebuildText(strengthSlider->text->context, strengthSlider->text, "1");
     
     brushSizeSlider = cwsSurfaceAddSlider(terrainEditSurface);
-    brushSizeSlider->pos = (vec2){.x = 10, .y = 30};
+    brushSizeSlider->pos = (vec2){.x = 10, .y = 85};
     brushSizeSlider->size = (vec2){.x = 180, .y = 25};
     brushSizeSlider->min = 1;
     brushSizeSlider->max = 10;
@@ -40,23 +42,36 @@ void init_terrainEdit()
     cwsRebuildText(brushSizeSlider->text->context, brushSizeSlider->text, "1");
     
     limitHeightBox = cwsSurfaceAddCheckbox(terrainEditSurface);
-    limitHeightBox->pos = (vec2){.x = 10, .y = 60};
-    limitHeightBox->size = (vec2){.x = 100, .y = 25};
+    limitHeightBox->pos = (vec2){.x = 10, .y = 140};
+    limitHeightBox->size = (vec2){.x = 100, .y = 22};
     cwsRebuildText(limitHeightBox->text->context, limitHeightBox->text, "Limit height");
     
     limitHeightSlider = cwsSurfaceAddSlider(terrainEditSurface);
-    limitHeightSlider->pos = (vec2){.x = 10, .y = 90};
+    limitHeightSlider->pos = (vec2){.x = 10, .y = 195};
     limitHeightSlider->size = (vec2){.x = 180, .y = 25};
     limitHeightSlider->min = 0;
     limitHeightSlider->max = 100;
     limitHeightSlider->value = 1;
     cwsRebuildText(limitHeightSlider->text->context, limitHeightSlider->text, "1");
     
+    brushTypeSlider = cwsSurfaceAddSlider(terrainEditSurface);
+    brushTypeSlider->pos = (vec2){.x = 10, .y = 250};
+    brushTypeSlider->size = (vec2){.x = 180, .y = 25};
+    brushTypeSlider->min = 0;
+    brushTypeSlider->max = 2;
+    brushTypeSlider->value = 0;
+    cwsRebuildText(brushTypeSlider->text->context, brushTypeSlider->text, "0");
+    
+    brushTypeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 232}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Type: Circle");
+    strengthText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 12}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Strength");
+    brushSizeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 67}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Size");
+    heightLimitText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 177}, (vec2){.x = 0.5f, .y = 0.5f}, "Height Limit");
+    
     cwsRefreshSurface(terrainEditSurface);
     cwsShowSurface(terrainEditSurface, false);
     
     cwsMaterialInit(terrainMaterial);
-    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/single_v", "./data/shaders/single_f");
+    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f");
     cwsTextureFromfile(&terrainTexture, "./data/gfx/tgrid.png", IF_LINEAR_MIP_LINEAR);
     cwsMaterialAddTexture(&terrainMaterial, terrainTexture);
     
@@ -65,17 +80,27 @@ void init_terrainEdit()
     update_terrain(dummy_terrain);
 }
 
-void update_terrain_edit()
+const char *BRUSH_NAMES[3] = {"Brush Type: Circle", "Brush Type: Rect", "Brush Type: Smoother"};
+void update_terrain_edit(vec2 xz)
 {
     if((strengthSlider->event_flags & EVENT_SLIDER_CHANGED))
     {
-        brushStrength = strengthSlider->value;
+        brushStrength = (f32)strengthSlider->value * 0.01f;
     }
     
     if((brushSizeSlider->event_flags & EVENT_SLIDER_CHANGED))
     {
         brushSize = brushSizeSlider->value;
     }
+    
+    if((brushTypeSlider->event_flags & EVENT_SLIDER_CHANGED))
+    {
+        brushType = brushTypeSlider->value;
+        cwsRebuildText(brushTypeText->context, brushTypeText, BRUSH_NAMES[brushType]);
+    }
+    
+    cwsBindMaterial(&terrainMaterial);
+    glUniform3f(glGetUniformLocation(terrainMaterial.shader.id, "cursor"), xz.x, xz.y, brushSize);
 }
 
 Terrain *new_terrain(i32 width, i32 depth)
@@ -218,15 +243,15 @@ void terrain_raise_rect(Terrain *t, vec2 xz)
                 
                 if(!limitHeightBox->checked)
                 {
-                    t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+                    t->vertices.data[i*11+1] += ((f32)brushStrength);
                 }
                 else if((brushStrength > 0 && t->vertices.data[i*11+1] < limitHeightSlider->value))
                 {
-                    t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+                    t->vertices.data[i*11+1] += ((f32)brushStrength);
                 }
                 else if((brushStrength < 0 && t->vertices.data[i*11+1] > limitHeightSlider->value))
                 {
-                    t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+                    t->vertices.data[i*11+1] += ((f32)brushStrength);
                 }
                 else
                 {
@@ -240,15 +265,15 @@ void terrain_raise_rect(Terrain *t, vec2 xz)
         i32 i = (i32)xz.x + t->width * (i32)xz.y;
         if(!limitHeightBox->checked)
         {
-            t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+            t->vertices.data[i*11+1] += ((f32)brushStrength);
         }
         else if((brushStrength > 0 && t->vertices.data[i*11+1] < limitHeightSlider->value))
         {
-            t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+            t->vertices.data[i*11+1] += ((f32)brushStrength);
         }
         else if((brushStrength < 0 && t->vertices.data[i*11+1] > limitHeightSlider->value))
         {
-            t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+            t->vertices.data[i*11+1] += ((f32)brushStrength);
         }        
         else
         {
@@ -267,12 +292,12 @@ void terrain_raise_circle(Terrain *t, vec2 xz)
     
     if(brushSize > 1)
     {
-        for(f32 x = xz.x - (f32)brushSize/2; x < xz.x + (f32)brushSize/2; x += 0.5)
+        for(f32 x = xz.x - (f32)brushSize; x < xz.x + (f32)brushSize; x++)
         {
-            for(f32 z = xz.y - (f32)brushSize/2; z < xz.y + (f32)brushSize/2; z += 0.5)
+            for(f32 z = xz.y - (f32)brushSize; z < xz.y + (f32)brushSize; z++)
             {
                 f32 p = (x-xz.x)*(x-xz.x)+(z-xz.y)*(z-xz.y);
-                f32 r = (f32)brushSize/2;
+                f32 r = (f32)brushSize;
                 
                 if((x < 0 || x >= t->width ||
                     z < 0 || z >= t->depth) ||
@@ -284,17 +309,18 @@ void terrain_raise_circle(Terrain *t, vec2 xz)
                 i32 i = (i32)x + t->width * (i32)z;
                 f32 d = abs((r*r)-p);
                 
+                f32 b = 1.0f / (brushSize*brushSize);
                 if(!limitHeightBox->checked)
                 {
-                    t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f * (d*0.1f);
+                    t->vertices.data[i*11+1] += ((f32)brushStrength) * (d*b);
                 }
                 else if((brushStrength > 0 && t->vertices.data[i*11+1] < limitHeightSlider->value))
                 {
-                    t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f * (d*0.1f);
+                    t->vertices.data[i*11+1] += ((f32)brushStrength)  * (d*b);
                 }
                 else if((brushStrength < 0 && t->vertices.data[i*11+1] > limitHeightSlider->value))
                 {
-                    t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f * (d*0.1f);
+                    t->vertices.data[i*11+1] += ((f32)brushStrength) * (d*b);
                 }
                 else
                 {
@@ -308,15 +334,15 @@ void terrain_raise_circle(Terrain *t, vec2 xz)
         i32 i = (i32)xz.x + t->width * (i32)xz.y;
         if(!limitHeightBox->checked)
         {
-            t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+            t->vertices.data[i*11+1] += ((f32)brushStrength);
         }
         else if((brushStrength > 0 && t->vertices.data[i*11+1] < limitHeightSlider->value))
         {
-            t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+            t->vertices.data[i*11+1] += ((f32)brushStrength);
         }
         else if((brushStrength < 0 && t->vertices.data[i*11+1] > limitHeightSlider->value))
         {
-            t->vertices.data[i*11+1] += ((f32)brushStrength) * 0.05f;
+            t->vertices.data[i*11+1] += ((f32)brushStrength);
         }        
         else
         {
@@ -325,15 +351,103 @@ void terrain_raise_circle(Terrain *t, vec2 xz)
     }
 }
 
-void terrain_raise(Terrain *t, vec2 xz)
+void terrain_smooth(Terrain *t, vec2 pt)
+{
+    if(pt.x < 0 || pt.x >= t->width ||
+       pt.y < 0 || pt.y >= t->depth)
+    {
+        return;
+    }
+    
+    if(brushSize > 1)
+    {
+        for(f32 x = pt.x - (f32)brushSize; x < pt.x + (f32)brushSize; x ++)
+        {
+            for(f32 z = pt.y - (f32)brushSize; z < pt.y + (f32)brushSize; z ++)
+            {
+                f32 p = (x-pt.x)*(x-pt.x)+(z-pt.y)*(z-pt.y);
+                f32 r = (f32)brushSize/2;
+                
+                if((x < 0 || x >= t->width ||
+                    z < 0 || z >= t->depth) ||
+                   p > (r*r))
+                {
+                    continue;
+                }            
+                
+                i32 i = (i32)x + t->width * (i32)z;
+              
+                //Average current Y to neighbours
+                f32 nb[8];
+                if(x > 0)         nb[0] = t->vertices.data[(i-1)*11+1];
+                else               nb[0] = t->vertices.data[i*11+1];
+                
+                if(x < t->width) nb[1] = t->vertices.data[(i+1)*11+1];
+                else                  nb[1] = t->vertices.data[i*11+1];
+                
+                if(z > 0) nb[2] = t->vertices.data[(i-t->width)*11+1];
+                else       nb[2] = t->vertices.data[i*11+1];
+                
+                if(z < t->depth) nb[3] = t->vertices.data[(i+t->width)*11+1];
+                else                  nb[3] = t->vertices.data[i*11+1];
+                
+                if(x > 0 && z > 0 ) nb[4] = t->vertices.data[(i-t->width-1)*11+1];
+                else                      nb[4] = t->vertices.data[i*11+1];
+                
+                if(x < t->width && z > 0 ) nb[5] = t->vertices.data[(i-t->width+1)*11+1];
+                else                                  nb[5] = t->vertices.data[i*11+1];
+                
+                if(x < t->width && z < t->depth ) nb[6] = t->vertices.data[(i+t->width+1)*11+1];
+                else                                             nb[6]  = t->vertices.data[i*11+1];
+                
+                if(x >0 && z < t->depth ) nb[7] = t->vertices.data[(i+t->width-1)*11+1];
+                else                                 nb[7]  = t->vertices.data[i*11+1];
+                
+                f32 sum = t->vertices.data[i*11+1];
+                for(i32 i = 0; i < 8; ++i)
+                {
+                    sum += nb[i];
+                }
+                sum /= 9.0f;
+                t->vertices.data[i*11+1] = sum;
+            }
+        }
+    }
+    else
+    {
+    }    
+}
+
+void terrain_edit(Terrain *t, vec2 p1, vec2 p2)
 {
     if(brushType == BRUSH_RECT)
     {
-        terrain_raise_rect(t,xz);
+        vec2 d = vec2_sub(p2,p1);
+        for(f32 i = 0.0f; i < 1.0f; i += 0.25f)
+        {
+            terrain_raise_rect(t,(vec2){
+                               .x = p1.x + (d.x*i),
+                               .y = p1.y + (d.y*i)
+                               });
+        }
     }
     else if(brushType == BRUSH_CIRCLE)
     {
-        terrain_raise_circle(t,xz);
+        vec2 d = vec2_sub(p2,p1);
+        for(f32 i = 0.0f; i < 1.0f; i += 0.25f)
+        {
+            terrain_raise_circle(t,(vec2){
+                               .x = p1.x + (d.x*i),
+                               .y = p1.y + (d.y*i)
+                               });
+        }
+    }
+    else if(brushType == BRUSH_SMOOTHER)
+    {
+        terrain_smooth(t,(vec2){
+                       .x = p2.x,
+                       .y = p2.y
+                       });
     }
     update_terrain(t);
 }

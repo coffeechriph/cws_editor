@@ -9,7 +9,7 @@ gcc \
 	./include/toolbar.c \
 	./include/scene.c \
 	./include/main.c \
-	-lcws \
+	-lcws -lGL -lGLEW \
 	-o ./bin/game \
 	-g \
 	-rdynamic \

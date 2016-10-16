@@ -22,7 +22,8 @@ typedef struct
 typedef enum
 {
     BRUSH_CIRCLE,
-    BRUSH_RECT
+    BRUSH_RECT,
+    BRUSH_SMOOTHER
 } BrushTypes;
 
 struct 
@@ -34,11 +35,11 @@ struct
 
 extern Terrain *dummy_terrain;
 void init_terrainEdit();
-void update_terrain_edit();
+void update_terrain_edit(vec2 xz);
 void destroy_terrain_edit();
 
 Terrain *new_terrain(i32 width, i32 depth);
 void update_terrain(Terrain *t);
 
-void terrain_raise(Terrain *t, vec2 xz);
+void terrain_edit(Terrain *t, vec2 p1, vec2 p2);
 #endif

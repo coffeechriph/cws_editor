@@ -12,6 +12,8 @@ int main(int args, char *argv[])
     
     while(cws_running)
     {
+        cws_run();
+        
         cwsCamera *cam = cwsActiveCamera();
         if(get_key_state(SDL_SCANCODE_W) == KEY_PRESSED)
         {
@@ -40,8 +42,6 @@ int main(int args, char *argv[])
         cwsSceneDraw();
         cwsGuiDraw();
         cwsSwapBuffers();
-        
-        cws_run();
         
         if(get_key_state(SDL_SCANCODE_ESCAPE) == KEY_PRESSED)
         {
