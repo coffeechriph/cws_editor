@@ -10,6 +10,7 @@ cwsRenderer *cursorRenderer;
 cwsMesh cursorMesh;
 cwsMaterial cursorMaterial;
 
+cwsDirLight *sceneLight;
 cwsCamera *sceneCam;
 
 void init_scene()
@@ -37,6 +38,9 @@ void init_scene()
     cwsUpdateBounds(cursorRenderer);
     
     init_terrainEdit();
+    
+    sceneLight = cwsNewDirLight();
+    sceneLight->rot = (vec3){35,45,0};
 }
 
 void update_scene()
@@ -48,7 +52,7 @@ void update_scene()
         aabb ab;
         
         ab.center = (vec3){0,0,0};
-        ab.extent = (vec3){50,0.1,50};
+        ab.extent = (vec3){100,0.1,100};
         ray_hitinfo info = ray_aabb_test(r,ab);
         
         if(info.hit)
@@ -74,4 +78,6 @@ void destroy_scene()
     cwsDeleteMesh(&gridMesh);
     cwsDeleteShader(&gridMaterial.shader);
     cwsDeleteMaterial(&gridMaterial);
+    cwsDeleteDirLight(sceneLight);
+    destroy_terrain_edit();
 }

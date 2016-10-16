@@ -60,4 +60,5 @@ void update_material_edit()
 
 void destroy_material_edit()
 {
+    
 }

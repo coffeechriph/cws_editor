@@ -1,6 +1,6 @@
 #!/bin/bash
 cd bin
-LD_LIBRARY_PATH=./
+LD_LIBRARY_PATH="./:/home/chriph/Projects/cws/bin/"
 export LD_LIBRARY_PATH
 ./game
 cd ../

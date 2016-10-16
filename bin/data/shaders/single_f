@@ -124,7 +124,7 @@ void main()
 	vec3 mixed = ambient_light.xyz * Color;
 	for(int i = 0; i < lights_count.x; ++i)
 	{
-		mixed = max(mixed,EE_dirlight_color(i, Normal));
+		mixed = mix(mixed, EE_dirlight_color(i, Normal), 0.5f);
 	}
 
 	for(int i = 0; i < lights_count.y; ++i)
@@ -140,12 +140,14 @@ void main()
 	/*
 		Frustum splits are chosen depending on the bounds of a sphere as our frustum splits are fit inside a sphere and not a box.
 		Sphere eq = x^2+y^2+z^2 = r^2
+
+		Split values are chosen from ((far-near)/2) * ((far-near)/2)
 	*/
 	float light_factor = 0.0f;
 	float P_Pos_sqr = (P_Pos.x*P_Pos.x)+(P_Pos.y*P_Pos.y)+(P_Pos.z*P_Pos.z);
 
 	float asd = clamp(P_Pos_sqr, 0.0f, 4096.0f);
-	int ind = clamp(int(step(asd,16) + step(asd,32) + step(asd,64)), 0, 3);
+	int ind = clamp(int(step(asd,36) + step(asd,144) + step(asd,2304)), 0, 4);
 
 	vec4 dirlight_lsp[4]; 
 	dirlight_lsp[0] = shadow_lightspace_pos_lod4;
@@ -158,7 +160,7 @@ void main()
 	cascade_offsets[1] = vec2(0.0,0.5);
 	cascade_offsets[2] = vec2(0.5,0.0);
 	cascade_offsets[3] = vec2(0.0,0.0);
-
+	
 	light_factor += sample_dirlight_shadow(0, dirlight_lsp[ind], shadow_map, 1, cascade_offsets[ind]);
 
 	for(int i = 0; i < lights_count.z; ++i)
@@ -204,11 +206,12 @@ void main()
 		light_factor += res;
 	}
 	
-vec4 color[4];
+vec4 color[5];
 color[0] = vec4(1,0,0,1);
 color[1] = vec4(0,1,0,1);
 color[2] = vec4(0,0,1,1);
 color[3] = vec4(1,1,0,1);
+color[4] = vec4(1,1,1,1);
 	finalColor = texture(tex0, Uv) * vec4(mixed,1.0f) * (1-light_factor);// * color[ind];
 }
 

@@ -19,15 +19,23 @@ typedef struct
 
 }Terrain;
 
+typedef enum
+{
+    BRUSH_CIRCLE,
+    BRUSH_RECT
+} BrushTypes;
+
 struct 
 {
     f32 strength;
     i32 brush_size;
+    i32 brush_type;
 } TerrainEditSettings;
 
 extern Terrain *dummy_terrain;
 void init_terrainEdit();
 void update_terrain_edit();
+void destroy_terrain_edit();
 
 Terrain *new_terrain(i32 width, i32 depth);
 void update_terrain(Terrain *t);

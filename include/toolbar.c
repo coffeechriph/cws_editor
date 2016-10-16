@@ -13,6 +13,8 @@ void create_toolbar()
     surface_skin.outline_color = cwsPackRgb((ivec3){.x = 21, .y = 24, .z = 39});
     surface_skin.outline_size = 1;
     
+    slider_skin.mark_scale = (vec2){.x = 0.025f, .y = 1.2f};
+    
     toolbar = cwsNewSurface(NULL);
     toolbar->transform->size = (vec2){.x = scrsz.x - 400, .y = 40};
     toolbar->transform->pos = (vec3){.x = 200, scrsz.y - 40, 0};
@@ -47,6 +49,62 @@ void create_toolbar()
     create_material_edit();
 }
 
+void enable_tool(i32 tooltype)
+{
+    if(tooltype == TOOL_NEW_PROJECT)
+    {
+        saveProjectBtn->toggled = false;
+        loadProjectBtn->toggled = false;
+        terrainEditBtn->toggled = false;
+        materialEditBtn->toggled = false;
+        newProjectBtn->toggled = !newProjectBtn->toggled;
+        cwsShowSurface(materialEditSurface, false);
+        cwsShowSurface(terrainEditSurface, false);
+    }
+    else if(tooltype == TOOL_SAVE_PROJECT)
+    {
+        newProjectBtn->toggled = false;
+        loadProjectBtn->toggled = false;
+        terrainEditBtn->toggled = false;
+        materialEditBtn->toggled = false;
+        saveProjectBtn->toggled = true;
+        cwsShowSurface(terrainEditSurface, false);
+        cwsShowSurface(materialEditSurface, false);
+    }
+    else if(tooltype == TOOL_LOAD_PROJECT)
+    {
+        newProjectBtn->toggled = false;
+        saveProjectBtn->toggled = false;
+        terrainEditBtn->toggled = false;
+        materialEditBtn->toggled = false;
+        loadProjectBtn->toggled = !loadProjectBtn->toggled;
+        cwsShowSurface(terrainEditSurface, false);
+        cwsShowSurface(materialEditSurface, false); 
+    }
+    else if(tooltype == TOOL_TERRAIN_EDIT)
+    {
+        newProjectBtn->toggled = false;
+        saveProjectBtn->toggled = false;
+        loadProjectBtn->toggled = false;
+        materialEditBtn->toggled = false;
+        terrainEditBtn->toggled = !terrainEditBtn->toggled;
+        cwsShowSurface(materialEditSurface, false);
+        cwsShowSurface(terrainEditSurface, terrainEditBtn->toggled);
+    }
+    else if(tooltype == TOOL_MATERIAL_EDIT)
+    {
+        newProjectBtn->toggled = false;
+        saveProjectBtn->toggled = false;
+        loadProjectBtn->toggled = false;
+        terrainEditBtn->toggled = false;
+        materialEditBtn->toggled = !materialEditBtn->toggled;
+        cwsShowSurface(materialEditSurface, materialEditBtn->toggled);
+        cwsShowSurface(terrainEditSurface, false);
+    }
+    
+    selected_tool = tooltype;
+}
+
 //Key shortcuts for the toolbar
 bool wait_key_release = false;
 void shortcut_toolbar()
@@ -58,14 +116,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                saveProjectBtn->toggled = false;
-                loadProjectBtn->toggled = false;
-                terrainEditBtn->toggled = false;
-                materialEditBtn->toggled = false;
-                newProjectBtn->toggled = !newProjectBtn->toggled;
-                cwsShowSurface(materialEditSurface, false);
-                cwsShowSurface(terrainEditSurface, false);
-                selected_tool = TOOL_NEW_PROJECT;
+                enable_tool(TOOL_NEW_PROJECT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_2) == KEY_PRESSED)
@@ -73,14 +124,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                newProjectBtn->toggled = false;
-                loadProjectBtn->toggled = false;
-                terrainEditBtn->toggled = false;
-                materialEditBtn->toggled = false;
-                saveProjectBtn->toggled = true;
-                cwsShowSurface(terrainEditSurface, false);
-                cwsShowSurface(materialEditSurface, false);
-                selected_tool = TOOL_SAVE_PROJECT;
+                enable_tool(TOOL_SAVE_PROJECT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_3) == KEY_PRESSED)
@@ -88,14 +132,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                newProjectBtn->toggled = false;
-                saveProjectBtn->toggled = false;
-                terrainEditBtn->toggled = false;
-                materialEditBtn->toggled = false;
-                loadProjectBtn->toggled = !loadProjectBtn->toggled;
-                cwsShowSurface(terrainEditSurface, false);
-                cwsShowSurface(materialEditSurface, false); 
-                selected_tool = TOOL_LOAD_PROJECT;
+                enable_tool(TOOL_LOAD_PROJECT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_4) == KEY_PRESSED)
@@ -103,14 +140,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                newProjectBtn->toggled = false;
-                saveProjectBtn->toggled = false;
-                loadProjectBtn->toggled = false;
-                materialEditBtn->toggled = false;
-                terrainEditBtn->toggled = !terrainEditBtn->toggled;
-                cwsShowSurface(materialEditSurface, false);
-                cwsShowSurface(terrainEditSurface, terrainEditBtn->toggled);
-                selected_tool = TOOL_TERRAIN_EDIT;
+                enable_tool(TOOL_TERRAIN_EDIT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_5) == KEY_PRESSED)
@@ -118,14 +148,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                newProjectBtn->toggled = false;
-                saveProjectBtn->toggled = false;
-                loadProjectBtn->toggled = false;
-                terrainEditBtn->toggled = false;
-                materialEditBtn->toggled = !materialEditBtn->toggled;
-                cwsShowSurface(materialEditSurface, materialEditBtn->toggled);
-                cwsShowSurface(terrainEditSurface, false);
-                selected_tool = TOOL_MATERIAL_EDIT;
+                enable_tool(TOOL_MATERIAL_EDIT);
             }
         }
         else
@@ -140,53 +163,23 @@ void update_toolbar()
     shortcut_toolbar();
     if(newProjectBtn->event_flags & EVENT_CLICKED)
     {
-        saveProjectBtn->toggled = false;
-        loadProjectBtn->toggled = false;
-        terrainEditBtn->toggled = false;
-        materialEditBtn->toggled = false;
-        cwsShowSurface(materialEditSurface, false);
-        cwsShowSurface(terrainEditSurface, false);
-        selected_tool = TOOL_NEW_PROJECT;
+        enable_tool(TOOL_NEW_PROJECT);
     }
     else if(saveProjectBtn->event_flags & EVENT_CLICKED)
     {
-        newProjectBtn->toggled = false;
-        loadProjectBtn->toggled = false;
-        terrainEditBtn->toggled = false;
-        materialEditBtn->toggled = false;
-        cwsShowSurface(materialEditSurface, false);
-        cwsShowSurface(terrainEditSurface, false);
-        selected_tool = TOOL_SAVE_PROJECT;
+        enable_tool(TOOL_SAVE_PROJECT);
     }
     else if(loadProjectBtn->event_flags & EVENT_CLICKED)
     {
-        newProjectBtn->toggled = false;
-        saveProjectBtn->toggled = false;
-        terrainEditBtn->toggled = false;
-        materialEditBtn->toggled = false;
-        cwsShowSurface(materialEditSurface, false); 
-        cwsShowSurface(terrainEditSurface, false);
-        selected_tool = TOOL_LOAD_PROJECT;
+        enable_tool(TOOL_LOAD_PROJECT);
     }
     else if(terrainEditBtn->event_flags & EVENT_CLICKED)
     {
-        newProjectBtn->toggled = false;
-        saveProjectBtn->toggled = false;
-        loadProjectBtn->toggled = false;
-        materialEditBtn->toggled = false;
-        cwsShowSurface(materialEditSurface, false);
-        cwsShowSurface(terrainEditSurface, terrainEditBtn->toggled);
-        selected_tool = TOOL_TERRAIN_EDIT;
+        enable_tool(TOOL_TERRAIN_EDIT);
     }
     else if(materialEditBtn->event_flags & EVENT_CLICKED)
     {
-        newProjectBtn->toggled = false;
-        saveProjectBtn->toggled = false;
-        loadProjectBtn->toggled = false;
-        terrainEditBtn->toggled = false;
-        cwsShowSurface(materialEditSurface, materialEditBtn->toggled);
-        cwsShowSurface(terrainEditSurface, false);
-        selected_tool = TOOL_MATERIAL_EDIT;
+        enable_tool(TOOL_MATERIAL_EDIT);
     }
     
     update_material_edit();

@@ -1,7 +1,7 @@
 #!/bin/bash
 #Run EE
 cd bin
-LD_LIBRARY_PATH=./
+LD_LIBRARY_PATH="./:/home/chriph/Projects/cws/bin/"
 export LD_LIBRARY_PATH
 valgrind --tool=memcheck --track-origins=yes --leak-check=full ./game > log.txt 2>&1
 cd ../
