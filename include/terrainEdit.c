@@ -38,7 +38,7 @@ void init_terrainEdit()
     cwsRebuildText(strengthSlider->text->context, strengthSlider->text, "1");
     
     brushSizeSlider = cwsSurfaceAddSlider(terrainEditSurface);
-    brushSizeSlider->pos = (vec2){.x = 10, .y = 85};
+    brushSizeSlider->pos = (vec2){.x = 10, .y = 100};
     brushSizeSlider->size = (vec2){.x = 180, .y = 25};
     brushSizeSlider->min = 1;
     brushSizeSlider->max = 10;
@@ -46,30 +46,30 @@ void init_terrainEdit()
     cwsRebuildText(brushSizeSlider->text->context, brushSizeSlider->text, "1");
     
     limitHeightBox = cwsSurfaceAddCheckbox(terrainEditSurface);
-    limitHeightBox->pos = (vec2){.x = 10, .y = 140};
+    limitHeightBox->pos = (vec2){.x = 10, .y = 145};
     limitHeightBox->size = (vec2){.x = 100, .y = 22};
     cwsRebuildText(limitHeightBox->text->context, limitHeightBox->text, "Limit height");
     
     limitHeightSlider = cwsSurfaceAddSlider(terrainEditSurface);
-    limitHeightSlider->pos = (vec2){.x = 10, .y = 195};
+    limitHeightSlider->pos = (vec2){.x = 10, .y = 190};
     limitHeightSlider->size = (vec2){.x = 180, .y = 25};
     limitHeightSlider->min = 0;
     limitHeightSlider->max = 100;
-    limitHeightSlider->value = 1;
-    cwsRebuildText(limitHeightSlider->text->context, limitHeightSlider->text, "1");
+    limitHeightSlider->value = 0;
+    cwsRebuildText(limitHeightSlider->text->context, limitHeightSlider->text, "0");
     
     brushTypeSlider = cwsSurfaceAddSlider(terrainEditSurface);
-    brushTypeSlider->pos = (vec2){.x = 10, .y = 250};
+    brushTypeSlider->pos = (vec2){.x = 10, .y = 237};
     brushTypeSlider->size = (vec2){.x = 180, .y = 25};
     brushTypeSlider->min = 0;
     brushTypeSlider->max = 2;
     brushTypeSlider->value = 0;
     cwsRebuildText(brushTypeSlider->text->context, brushTypeSlider->text, "0");
     
-    brushTypeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 232}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Type: Circle");
+    brushTypeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 219}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Type: Circle");
     strengthText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 37}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Strength");
-    brushSizeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 67}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Size");
-    heightLimitText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 177}, (vec2){.x = 0.5f, .y = 0.5f}, "Height Limit");
+    brushSizeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 82}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Size");
+    heightLimitText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 172}, (vec2){.x = 0.5f, .y = 0.5f}, "Height Limit");
     
     cwsRefreshSurface(terrainEditSurface);
     cwsShowSurface(terrainEditSurface, false);
@@ -85,7 +85,7 @@ void update_terrain_edit(vec2 xz)
 {
     if(newTerrainBtn->event_flags & EVENT_CLICKED)
     {
-        Terrain *t = new_terrain(128,128);
+        Terrain *t = new_terrain(64,64);
         update_terrain(t);
         cws_array_push(terrains, t);
     }
@@ -118,7 +118,7 @@ Terrain *new_terrain(i32 width, i32 depth)
     cwsEmptyMesh(&t->mesh, attribs, 4);
    
     t->renderer = cwsNewRenderer(&terrainMaterial, &t->mesh);    
-    t->renderer->position = (vec3){-width/2,0.5,-depth/2};
+    t->renderer->position = (vec3){0,0.5,0};
     t->width = width;
     t->depth = depth;
     
@@ -416,7 +416,7 @@ void terrain_smooth(Terrain *t, vec2 pt)
                     sum += nb[i];
                 }
                 sum /= 9.0f;
-                t->vertices.data[i*11+1] = sum;
+                t->vertices.data[i*11+1] = (t->vertices.data[i*11+1]*0.9f) + (sum*0.1f);
             }
         }
     }

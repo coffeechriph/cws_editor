@@ -19,17 +19,11 @@ layout (std140) uniform LightData
 	vec4 spotlights_intensity[16];
 	vec4 spotlights_conedata[16];
 };
-
-uniform sampler2D tex0;
 uniform mat4 model_matrix;
 
 out vec4 finalColor;
-in vec3 Color;
-in vec3 Pos;
-in vec2 Uv;
-
 void main()
 {
-	finalColor = texture(tex0, Uv);
+	finalColor = vec4(0,1,0,1);
 }
 

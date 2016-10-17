@@ -5,7 +5,7 @@
 
 int main(int args, char *argv[])
 {
-    cws_create(1600,900,"RPG", true);
+    cws_create(1280,720,"RPG", true);
     
     create_toolbar();
     init_scene();
