@@ -48,14 +48,14 @@ void update_scene()
             if(get_mouse_state(0) == MOUSE_PRESSED)
             {
                 vec2 local = (vec2){
-                    info.point.x - dummy_terrain->renderer->position.x,
-                    info.point.z - dummy_terrain->renderer->position.z
+                    info.point.x,
+                    info.point.z
                 };
                 
                 vec2 d = vec2_sub(last_local, local);
                 if(vec2_length(d) < 2)
                 {
-                    terrain_edit(dummy_terrain, last_local, local);
+                    terrain_edit(last_local, local);
                 }
                 last_local = local;
             }

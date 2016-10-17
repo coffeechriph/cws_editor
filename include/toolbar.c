@@ -20,30 +20,30 @@ void create_toolbar()
     toolbar->transform->pos = (vec3){.x = 200, scrsz.y - 40, 0};
     toolbar->renderer->fill = true;
     
-    newProjectBtn = cwsSurfaceAddToggleButton(toolbar);
-    newProjectBtn->pos = (vec2){.x = 2, .y = 2};
-    newProjectBtn->size = (vec2){.x = 36, .y = 36};
-    cwsRebuildText(newProjectBtn->text->context, newProjectBtn->text, "NP");
-    
-    saveProjectBtn = cwsSurfaceAddToggleButton(toolbar);
-    saveProjectBtn->pos = (vec2){.x = 40, .y = 2};
-    saveProjectBtn->size = (vec2){.x = 36, .y = 36};
-    cwsRebuildText(saveProjectBtn->text->context, saveProjectBtn->text, "SP");
-    
-    loadProjectBtn = cwsSurfaceAddToggleButton(toolbar);
-    loadProjectBtn->pos = (vec2){.x = 78, .y = 2};
-    loadProjectBtn->size = (vec2){.x = 36, .y = 36};
-    cwsRebuildText(loadProjectBtn->text->context, loadProjectBtn->text, "LP");
-    
     terrainEditBtn = cwsSurfaceAddToggleButton(toolbar);
-    terrainEditBtn->pos = (vec2){.x = 116, .y = 2};
+    terrainEditBtn->pos = (vec2){.x = 2, .y = 2};
     terrainEditBtn->size = (vec2){.x = 36, .y = 36};
     cwsRebuildText(terrainEditBtn->text->context, terrainEditBtn->text, "TE");
 
     materialEditBtn = cwsSurfaceAddToggleButton(toolbar);
-    materialEditBtn->pos = (vec2){.x = 154, .y = 2};
+    materialEditBtn->pos = (vec2){.x = 40, .y = 2};
     materialEditBtn->size = (vec2){.x = 36, .y = 36};
     cwsRebuildText(materialEditBtn->text->context, materialEditBtn->text, "ME");
+    
+    newProjectBtn = cwsSurfaceAddToggleButton(toolbar);
+    newProjectBtn->pos = (vec2){.x = 78, .y = 2};
+    newProjectBtn->size = (vec2){.x = 36, .y = 36};
+    cwsRebuildText(newProjectBtn->text->context, newProjectBtn->text, "NP");
+    
+    saveProjectBtn = cwsSurfaceAddToggleButton(toolbar);
+    saveProjectBtn->pos = (vec2){.x = 116, .y = 2};
+    saveProjectBtn->size = (vec2){.x = 36, .y = 36};
+    cwsRebuildText(saveProjectBtn->text->context, saveProjectBtn->text, "SP");
+    
+    loadProjectBtn = cwsSurfaceAddToggleButton(toolbar);
+    loadProjectBtn->pos = (vec2){.x = 154, .y = 2};
+    loadProjectBtn->size = (vec2){.x = 36, .y = 36};
+    cwsRebuildText(loadProjectBtn->text->context, loadProjectBtn->text, "LP");
     
     cwsRefreshSurface(toolbar);
     create_material_edit();
@@ -60,6 +60,7 @@ void enable_tool(i32 tooltype)
         newProjectBtn->toggled = !newProjectBtn->toggled;
         cwsShowSurface(materialEditSurface, false);
         cwsShowSurface(terrainEditSurface, false);
+        selected_tool = newProjectBtn->toggled ? tooltype : TOOL_NONE;
     }
     else if(tooltype == TOOL_SAVE_PROJECT)
     {
@@ -67,9 +68,11 @@ void enable_tool(i32 tooltype)
         loadProjectBtn->toggled = false;
         terrainEditBtn->toggled = false;
         materialEditBtn->toggled = false;
-        saveProjectBtn->toggled = true;
+        saveProjectBtn->toggled = !saveProjectBtn->toggled;
         cwsShowSurface(terrainEditSurface, false);
         cwsShowSurface(materialEditSurface, false);
+        
+        selected_tool = saveProjectBtn->toggled ? tooltype : TOOL_NONE;
     }
     else if(tooltype == TOOL_LOAD_PROJECT)
     {
@@ -80,6 +83,7 @@ void enable_tool(i32 tooltype)
         loadProjectBtn->toggled = !loadProjectBtn->toggled;
         cwsShowSurface(terrainEditSurface, false);
         cwsShowSurface(materialEditSurface, false); 
+        selected_tool = loadProjectBtn->toggled ? tooltype : TOOL_NONE;
     }
     else if(tooltype == TOOL_TERRAIN_EDIT)
     {
@@ -90,6 +94,7 @@ void enable_tool(i32 tooltype)
         terrainEditBtn->toggled = !terrainEditBtn->toggled;
         cwsShowSurface(materialEditSurface, false);
         cwsShowSurface(terrainEditSurface, terrainEditBtn->toggled);
+        selected_tool = terrainEditBtn->toggled ? tooltype : TOOL_NONE;
     }
     else if(tooltype == TOOL_MATERIAL_EDIT)
     {
@@ -100,9 +105,9 @@ void enable_tool(i32 tooltype)
         materialEditBtn->toggled = !materialEditBtn->toggled;
         cwsShowSurface(materialEditSurface, materialEditBtn->toggled);
         cwsShowSurface(terrainEditSurface, false);
+        selected_tool = materialEditBtn->toggled ? tooltype : TOOL_NONE;
     }
     
-    selected_tool = tooltype;
 }
 
 //Key shortcuts for the toolbar
@@ -116,7 +121,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                enable_tool(TOOL_NEW_PROJECT);
+                enable_tool(TOOL_TERRAIN_EDIT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_2) == KEY_PRESSED)
@@ -124,7 +129,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                enable_tool(TOOL_SAVE_PROJECT);
+                enable_tool(TOOL_MATERIAL_EDIT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_3) == KEY_PRESSED)
@@ -132,7 +137,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                enable_tool(TOOL_LOAD_PROJECT);
+                enable_tool(TOOL_NEW_PROJECT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_4) == KEY_PRESSED)
@@ -140,7 +145,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                enable_tool(TOOL_TERRAIN_EDIT);
+                enable_tool(TOOL_SAVE_PROJECT);
             }
         }
         else if(get_key_state(SDL_SCANCODE_5) == KEY_PRESSED)
@@ -148,7 +153,7 @@ void shortcut_toolbar()
             if(wait_key_release == false)
             {
                 wait_key_release = true;
-                enable_tool(TOOL_MATERIAL_EDIT);
+                enable_tool(TOOL_LOAD_PROJECT);
             }
         }
         else

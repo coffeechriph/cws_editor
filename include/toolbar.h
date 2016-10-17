@@ -6,6 +6,7 @@
 
 typedef enum
 {
+    TOOL_NONE,
     TOOL_NEW_PROJECT,
     TOOL_SAVE_PROJECT,
     TOOL_LOAD_PROJECT,

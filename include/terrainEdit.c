@@ -4,14 +4,13 @@ cwsTexture2D terrainTexture;
 cws_array(Terrain*, terrains);
 
 cwsGuiSurface *terrainEditSurface;
+cwsGuiButton *newTerrainBtn;
 cwsGuiSlider *strengthSlider;
 cwsGuiSlider *brushSizeSlider;
 cwsGuiSlider *limitHeightSlider;
 cwsGuiCheckbox *limitHeightBox;
 cwsGuiSlider *brushTypeSlider;
 cwsText *brushTypeText, *strengthText, *brushSizeText, *heightLimitText;
-
-Terrain *dummy_terrain;
 
 i32 brushType = BRUSH_CIRCLE;
 f32 brushStrength = 0.01f;
@@ -25,8 +24,13 @@ void init_terrainEdit()
     terrainEditSurface->transform->size = (vec2){.x = 200, .y = 400};
     terrainEditSurface->renderer->fill = true;
   
+    newTerrainBtn = cwsSurfaceAddButton(terrainEditSurface);
+    newTerrainBtn->pos = (vec2){.x = 10, .y = 10};
+    newTerrainBtn->size = (vec2){.x = 100, .y = 20};
+    cwsRebuildText(newTerrainBtn->text->context, newTerrainBtn->text, "New terrain");
+    
     strengthSlider = cwsSurfaceAddSlider(terrainEditSurface);
-    strengthSlider->pos = (vec2){.x = 10, .y = 30};
+    strengthSlider->pos = (vec2){.x = 10, .y = 55};
     strengthSlider->size = (vec2){.x = 180, .y = 25};
     strengthSlider->min = -20;
     strengthSlider->max = 20;
@@ -63,7 +67,7 @@ void init_terrainEdit()
     cwsRebuildText(brushTypeSlider->text->context, brushTypeSlider->text, "0");
     
     brushTypeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 232}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Type: Circle");
-    strengthText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 12}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Strength");
+    strengthText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 37}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Strength");
     brushSizeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 67}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Size");
     heightLimitText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 177}, (vec2){.x = 0.5f, .y = 0.5f}, "Height Limit");
     
@@ -74,15 +78,18 @@ void init_terrainEdit()
     cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f");
     cwsTextureFromfile(&terrainTexture, "./data/gfx/tgrid.png", IF_LINEAR_MIP_LINEAR);
     cwsMaterialAddTexture(&terrainMaterial, terrainTexture);
-    
-    //Add dummy terrain
-    dummy_terrain = new_terrain(128,128);
-    update_terrain(dummy_terrain);
 }
 
 const char *BRUSH_NAMES[3] = {"Brush Type: Circle", "Brush Type: Rect", "Brush Type: Smoother"};
 void update_terrain_edit(vec2 xz)
 {
+    if(newTerrainBtn->event_flags & EVENT_CLICKED)
+    {
+        Terrain *t = new_terrain(128,128);
+        update_terrain(t);
+        cws_array_push(terrains, t);
+    }
+    
     if((strengthSlider->event_flags & EVENT_SLIDER_CHANGED))
     {
         brushStrength = (f32)strengthSlider->value * 0.01f;
@@ -418,36 +425,42 @@ void terrain_smooth(Terrain *t, vec2 pt)
     }    
 }
 
-void terrain_edit(Terrain *t, vec2 p1, vec2 p2)
+void terrain_edit(vec2 p1, vec2 p2)
 {
-    if(brushType == BRUSH_RECT)
+    for(i32 i = 0; i < terrains.length; ++i)
     {
-        vec2 d = vec2_sub(p2,p1);
-        for(f32 i = 0.0f; i < 1.0f; i += 0.25f)
+        Terrain *t = terrains.data[i];
+        p1 = vec2_sub(p1, (vec2){t->renderer->position.x, t->renderer->position.z});
+        p2 = vec2_sub(p2, (vec2){t->renderer->position.x, t->renderer->position.z});
+        if(brushType == BRUSH_RECT)
         {
-            terrain_raise_rect(t,(vec2){
-                               .x = p1.x + (d.x*i),
-                               .y = p1.y + (d.y*i)
-                               });
+            vec2 d = vec2_sub(p2,p1);
+            for(f32 i = 0.0f; i < 1.0f; i += 0.25f)
+            {
+                terrain_raise_rect(t,(vec2){
+                                   .x = p1.x + (d.x*i),
+                                   .y = p1.y + (d.y*i)
+                                   });
+            }
         }
-    }
-    else if(brushType == BRUSH_CIRCLE)
-    {
-        vec2 d = vec2_sub(p2,p1);
-        for(f32 i = 0.0f; i < 1.0f; i += 0.25f)
+        else if(brushType == BRUSH_CIRCLE)
         {
-            terrain_raise_circle(t,(vec2){
-                               .x = p1.x + (d.x*i),
-                               .y = p1.y + (d.y*i)
-                               });
+            vec2 d = vec2_sub(p2,p1);
+            for(f32 i = 0.0f; i < 1.0f; i += 0.25f)
+            {
+                terrain_raise_circle(t,(vec2){
+                                     .x = p1.x + (d.x*i),
+                                     .y = p1.y + (d.y*i)
+                                     });
+            }
         }
+        else if(brushType == BRUSH_SMOOTHER)
+        {
+            terrain_smooth(t,(vec2){
+                           .x = p2.x,
+                           .y = p2.y
+                           });
+        }
+        update_terrain(t);
     }
-    else if(brushType == BRUSH_SMOOTHER)
-    {
-        terrain_smooth(t,(vec2){
-                       .x = p2.x,
-                       .y = p2.y
-                       });
-    }
-    update_terrain(t);
 }
