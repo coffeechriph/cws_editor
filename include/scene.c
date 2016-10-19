@@ -6,6 +6,7 @@ cwsMaterial gridMaterial;
 cwsTexture2D gridTexture;
 
 cwsDirLight *sceneLight;
+cwsPointLight *testPoint;
 cwsCamera *sceneCam;
 
 f32 grid_size = 1.0f;
@@ -52,7 +53,7 @@ void init_scene()
     cwsFillMesh(&gridMesh, vertices.data, vertices.length, indices.data, indices.length);
     
     cwsMaterialInit(gridMaterial);
-    cwsShaderFromfile(&gridMaterial.shader, "./data/shaders/grid_v", "./data/shaders/grid_f");
+    cwsShaderFromfile(&gridMaterial.shader, "./data/shaders/grid_v", "./data/shaders/grid_f", SH_NONE);
     cwsTextureFromfile(&gridTexture, "./data/gfx/grid.png", IF_LINEAR_MIP_LINEAR);
     cwsMaterialAddTexture(&gridMaterial, gridTexture);
     gridMaterial.rflags = RF_WIREFRAME_ENABLED;
@@ -64,6 +65,11 @@ void init_scene()
     
     sceneLight = cwsNewDirLight();
     sceneLight->rot = (vec3){35,45,0};
+
+    testPoint = cwsNewPointLight();
+    testPoint->pos = (vec3){.x = 10, .y = 1, .z = 10};
+    testPoint->color = (vec3){1,0,0};
+    testPoint->radius = 10.0f;
 }
 
 vec2 last_local = (vec2){.x = -1, .y = -1};

@@ -1,6 +1,6 @@
 #include "terrainEdit.h"
 cwsMaterial terrainMaterial;
-cwsTexture2D terrainTexture;
+cwsTexture2D grassTex, dirtTex, rockTex;
 cws_array(Terrain*, terrains);
 
 cwsGuiSurface *terrainEditSurface;
@@ -10,7 +10,8 @@ cwsGuiSlider *brushSizeSlider;
 cwsGuiSlider *limitHeightSlider;
 cwsGuiCheckbox *limitHeightBox;
 cwsGuiSlider *brushTypeSlider;
-cwsText *brushTypeText, *strengthText, *brushSizeText, *heightLimitText;
+cwsGuiSlider *brushTextureSlider;
+cwsText *brushTypeText, *strengthText, *brushSizeText, *heightLimitText, *brushTextureText;
 
 i32 brushType = BRUSH_CIRCLE;
 f32 brushStrength = 0.01f;
@@ -62,25 +63,39 @@ void init_terrainEdit()
     brushTypeSlider->pos = (vec2){.x = 10, .y = 237};
     brushTypeSlider->size = (vec2){.x = 180, .y = 25};
     brushTypeSlider->min = 0;
-    brushTypeSlider->max = 2;
+    brushTypeSlider->max = 3;
     brushTypeSlider->value = 0;
     cwsRebuildText(brushTypeSlider->text->context, brushTypeSlider->text, "0");
+    
+    brushTextureSlider = cwsSurfaceAddSlider(terrainEditSurface);
+    brushTextureSlider->pos = (vec2){.x = 10, .y = 284};
+    brushTextureSlider->size = (vec2){.x = 180, .y = 25};
+    brushTextureSlider->min = 0;
+    brushTextureSlider->max = 2;
+    brushTextureSlider->value = 0;
+    cwsRebuildText(brushTextureSlider->text->context, brushTextureSlider->text, "0");
     
     brushTypeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 219}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Type: Circle");
     strengthText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 37}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Strength");
     brushSizeText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 82}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Size");
     heightLimitText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 172}, (vec2){.x = 0.5f, .y = 0.5f}, "Height Limit");
+    brushTextureText = cwsSurfaceAddText(terrainEditSurface, (vec2){.x = 10, .y = 266}, (vec2){.x = 0.5f, .y = 0.5f}, "Brush Texture");
     
     cwsRefreshSurface(terrainEditSurface);
     cwsShowSurface(terrainEditSurface, false);
     
     cwsMaterialInit(terrainMaterial);
-    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f");
-    cwsTextureFromfile(&terrainTexture, "./data/gfx/tgrid.png", IF_LINEAR_MIP_LINEAR);
-    cwsMaterialAddTexture(&terrainMaterial, terrainTexture);
+    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f", SH_LIGHTING);
+    cwsTextureFromfile(&grassTex, "./data/gfx/grass.png", IF_LINEAR_MIP_LINEAR);
+    cwsTextureFromfile(&dirtTex, "./data/gfx/dirt.png", IF_LINEAR_MIP_LINEAR);
+    cwsTextureFromfile(&rockTex, "./data/gfx/rock.png", IF_LINEAR_MIP_LINEAR);
+    cwsMaterialAddTexture(&terrainMaterial, grassTex);
+    cwsMaterialAddTexture(&terrainMaterial, dirtTex);
+    cwsMaterialAddTexture(&terrainMaterial, rockTex);
+    cwsShaderCreateUniform(&terrainMaterial.shader, "cursor");
 }
 
-const char *BRUSH_NAMES[3] = {"Brush Type: Circle", "Brush Type: Rect", "Brush Type: Smoother"};
+const char *BRUSH_NAMES[4] = {"Brush Type: Circle", "Brush Type: Rect", "Brush Type: Smoother", "Brush Type: Paint"};
 void update_terrain_edit(vec2 xz)
 {
     if(newTerrainBtn->event_flags & EVENT_CLICKED)
@@ -107,7 +122,9 @@ void update_terrain_edit(vec2 xz)
     }
     
     cwsBindMaterial(&terrainMaterial);
-    glUniform3f(glGetUniformLocation(terrainMaterial.shader.id, "cursor"), xz.x, xz.y, brushSize);
+    f32 ca[3] = {xz.x, xz.y, brushSize};
+    cwsShaderBufferUniform(&terrainMaterial.shader, "cursor", ca, 3);
+//    glUniform3f(glGetUniformLocation(terrainMaterial.shader.id, "cursor"), xz.x, xz.y, brushSize);
 }
 
 Terrain *new_terrain(i32 width, i32 depth)
@@ -139,9 +156,9 @@ Terrain *new_terrain(i32 width, i32 depth)
         cws_array_push(t->vertices,x);
         cws_array_push(t->vertices,z);
         
-        cws_array_push(t->vertices,1.0f);
-        cws_array_push(t->vertices,1.0f);
-        cws_array_push(t->vertices,1.0f);
+        cws_array_push(t->vertices,0.0f);
+        cws_array_push(t->vertices,0.0f);
+        cws_array_push(t->vertices,0.0f);
         
         x += 1;
         if(x >= width)
@@ -181,38 +198,43 @@ Terrain *new_terrain(i32 width, i32 depth)
 void destroy_terrain_edit()
 {
     cwsDeleteShader(&terrainMaterial.shader);
-    cwsDeleteTexture(&terrainTexture);
+    cwsDeleteTexture(&grassTex);
+    cwsDeleteTexture(&dirtTex);
+    cwsDeleteTexture(&rockTex);
     cwsDeleteMaterial(&terrainMaterial);
 }
 
+f32 height_at(Terrain *t, i32 x, i32 z)
+{
+    if(x < 0) return 0.0f;
+    else if(x > t->width) return 0.0f;
+    else if(z < 0) return 0.0f;
+    else if(z > t->depth) return 0.0f;
+    
+    return t->vertices.data[(x + t->width * z)*11+1];
+}
 
 void update_terrain(Terrain *t)
 {
     i32 x = 0, z = 0;
-    vec3 p1 = (vec3){.x = 0, .y = 0, .z = 0};
-    vec3 p2 = (vec3){.x = 0, .y = 0, .z = 0};
-    vec3 p3 = (vec3){.x = 0, .y = 0, .z = 0};
     for(i32 i = 0; i < t->vertices.length; i += 11)
     {
-        if(x < t->width && z < t->depth)
+        if(z > 1 && x < t->width && z < t->depth)
         {
-            p1.x = t->vertices.data[i];
-            p1.y = t->vertices.data[i+1];
-            p1.z = t->vertices.data[i+2];
+            f32 hL = height_at(t, x-1,z);
+            f32 hR = height_at(t, x+1,z);
+            f32 hD = height_at(t, x,z-1);
+            f32 hU = height_at(t, x,z+1);
             
-            p2.x = t->vertices.data[(i+11)];
-            p2.y = t->vertices.data[(i+11)+1];
-            p2.z = t->vertices.data[(i+11)+2];
-            
-            p3.x = t->vertices.data[(i+t->width*11)];
-            p3.y = t->vertices.data[(i+t->width*11)+1];
-            p3.z = t->vertices.data[(i+t->width*11)+2];
-            
-            vec3 normal = vec3_crossproduct(vec3_sub(p2,p1), vec3_sub(p3,p1));
-            normal = vec3_normalize(normal);
-            t->vertices.data[i+3] = normal.x;
-            t->vertices.data[i+4] = normal.y;
-            t->vertices.data[i+5] = normal.z;
+            // deduce terrain normal
+            vec3 N;
+            N.x = hL - hR;
+            N.y = 255.0f;;
+            N.z = hD - hU;
+            N = vec3_normalize(N);
+            t->vertices.data[i+3] = N.x;
+            t->vertices.data[i+4] = N.y;
+            t->vertices.data[i+5] = N.z;
         }
         
         x += 1;
@@ -425,6 +447,49 @@ void terrain_smooth(Terrain *t, vec2 pt)
     }    
 }
 
+void terrain_paint(Terrain *t, vec2 xz)
+{
+    if(xz.x < 0 || xz.x >= t->width ||
+       xz.y < 0 || xz.y >= t->depth)
+    {
+        return;
+    }
+    
+    if(brushSize > 1)
+    {
+        for(f32 x = xz.x - (f32)brushSize; x < xz.x + (f32)brushSize; x++)
+        {
+            for(f32 z = xz.y - (f32)brushSize; z < xz.y + (f32)brushSize; z++)
+            {
+                f32 p = (x-xz.x)*(x-xz.x)+(z-xz.y)*(z-xz.y);
+                f32 r = (f32)brushSize;
+                
+                if((x < 0 || x >= t->width ||
+                    z < 0 || z >= t->depth) ||
+                   p > (r*r))
+                {
+                    continue;
+                }            
+                
+                i32 i = (i32)x + t->width * (i32)z;
+                f32 d = abs((r*r)-p);
+                
+                f32 b = 1.0f / (brushSize*brushSize);
+                f32 v = d*b*0.1f;
+                if(v > 1) v = 1.0f;
+                t->vertices.data[i*11+8+brushTextureSlider->value] += v;
+                if(t->vertices.data[i*11+8+brushTextureSlider->value] > 1.0f) t->vertices.data[i*11+8] = 1.0f;
+            }
+        }
+    }
+    else
+    {
+        i32 i = (i32)xz.x + t->width * (i32)xz.y;
+        t->vertices.data[i*11+8+brushTextureSlider->value] += 0.01f;
+        if(t->vertices.data[i*11+8+brushTextureSlider->value] > 1.0f) t->vertices.data[i*11+8+brushTextureSlider->value] = 1.0f;
+    }
+}
+
 void terrain_edit(vec2 p1, vec2 p2)
 {
     for(i32 i = 0; i < terrains.length; ++i)
@@ -460,6 +525,10 @@ void terrain_edit(vec2 p1, vec2 p2)
                            .x = p2.x,
                            .y = p2.y
                            });
+        }
+        else if(brushType == BRUSH_PAINT)
+        {
+            terrain_paint(t, p1);
         }
         update_terrain(t);
     }

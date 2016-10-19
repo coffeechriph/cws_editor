@@ -23,7 +23,8 @@ typedef enum
 {
     BRUSH_CIRCLE,
     BRUSH_RECT,
-    BRUSH_SMOOTHER
+    BRUSH_SMOOTHER,
+    BRUSH_PAINT
 } BrushTypes;
 
 struct 
