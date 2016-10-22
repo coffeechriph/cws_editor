@@ -85,7 +85,7 @@ void init_terrainEdit()
     cwsShowSurface(terrainEditSurface, false);
     
     cwsMaterialInit(terrainMaterial);
-    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f", SH_LIGHTING);
+    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f", SH_DEFAULT | SH_LIGHTING | SH_SHADOWS);
     cwsTextureFromfile(&grassTex, "./data/gfx/grass.png", IF_LINEAR_MIP_LINEAR);
     cwsTextureFromfile(&dirtTex, "./data/gfx/dirt.png", IF_LINEAR_MIP_LINEAR);
     cwsTextureFromfile(&rockTex, "./data/gfx/rock.png", IF_LINEAR_MIP_LINEAR);
