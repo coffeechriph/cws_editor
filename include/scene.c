@@ -9,6 +9,11 @@ cwsDirLight *sceneLight;
 cwsPointLight *testPoint;
 cwsCamera *sceneCam;
 
+cwsMesh planemesh;
+cwsMaterial mat;
+cwsRenderer *maps;
+cwsTexture2D maptexs;
+
 f32 grid_size = 1.0f;
 void init_scene()
 {
@@ -53,7 +58,7 @@ void init_scene()
     cwsFillMesh(&gridMesh, vertices.data, vertices.length, indices.data, indices.length);
     
     cwsMaterialInit(gridMaterial);
-    cwsShaderFromfile(&gridMaterial.shader, "./data/shaders/grid_v", "./data/shaders/grid_f", SH_NONE);
+    cwsShaderFromfile(&gridMaterial.shader, "./data/shaders/grid_v", "./data/shaders/grid_f", NULL);
     cwsTextureFromfile(&gridTexture, "./data/gfx/grid.png", IF_LINEAR_MIP_LINEAR);
     cwsMaterialAddTexture(&gridMaterial, gridTexture);
     gridMaterial.rflags = RF_WIREFRAME_ENABLED;
@@ -67,12 +72,24 @@ void init_scene()
     sceneLight->rot = (vec3){35,45,0};
 
     testPoint = cwsNewPointLight();
-    testPoint->pos = (vec3){.x = 10, .y = 1, .z = 10};
+    testPoint->pos = (vec3){.x = 10, .y = 2, .z = 10};
     testPoint->color = (vec3){1,0,0};
-    testPoint->radius = 10.0f;
+    testPoint->radius = 2.0f;
+    
+    cwsPlaneMesh(&planemesh, 1);
+    cwsMaterialInit(mat);
+    cwsShaderFromfile(&mat.shader, "./data/shaders/depth_v", "./data/shaders/depth_f", NULL);
+    maptexs.id = testPoint->frame_buffer_texture;
+    maptexs.size = (ivec2){.x = 1, .y = 1};
+    cwsMaterialAddTexture(&mat, maptexs);
+    maps = cwsNewRenderer(&mat, &planemesh);
+    maps->position = (vec3){.x = 0, .y = 4, .z = 0};
+    maps->scale = (vec3){.x = 6, .y = 1, .z = 1};
+    maps->rotation = quat_from_euler((vec3){.x = 90, .y = 0, .z = 0});
 }
 
 vec2 last_local = (vec2){.x = -1, .y = -1};
+bool last_captured = false;
 void update_scene()
 {
     if(selected_tool == TOOL_TERRAIN_EDIT)
@@ -101,12 +118,17 @@ void update_scene()
                     info.point.z
                 };
                 
-                vec2 d = vec2_sub(last_local, local);
-                if(vec2_length(d) < 2)
+                if(last_captured)
                 {
                     terrain_edit(last_local, local);
                 }
+                
                 last_local = local;
+                last_captured = true;
+            }
+            else
+            {
+                last_captured = false;
             }
         }
     }

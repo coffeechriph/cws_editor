@@ -85,7 +85,7 @@ void init_terrainEdit()
     cwsShowSurface(terrainEditSurface, false);
     
     cwsMaterialInit(terrainMaterial);
-    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f", SH_DEFAULT | SH_LIGHTING | SH_SHADOWS);
+    cwsShaderFromfile(&terrainMaterial.shader, "./data/shaders/terrain_v", "./data/shaders/terrain_f", NULL);
     cwsTextureFromfile(&grassTex, "./data/gfx/grass.png", IF_LINEAR_MIP_LINEAR);
     cwsTextureFromfile(&dirtTex, "./data/gfx/dirt.png", IF_LINEAR_MIP_LINEAR);
     cwsTextureFromfile(&rockTex, "./data/gfx/rock.png", IF_LINEAR_MIP_LINEAR);
@@ -93,6 +93,7 @@ void init_terrainEdit()
     cwsMaterialAddTexture(&terrainMaterial, dirtTex);
     cwsMaterialAddTexture(&terrainMaterial, rockTex);
     cwsShaderCreateUniform(&terrainMaterial.shader, "cursor");
+    terrainMaterial.rflags = RF_CULLING_ENABLED;
 }
 
 const char *BRUSH_NAMES[4] = {"Brush Type: Circle", "Brush Type: Rect", "Brush Type: Smoother", "Brush Type: Paint"};
@@ -528,7 +529,19 @@ void terrain_edit(vec2 p1, vec2 p2)
         }
         else if(brushType == BRUSH_PAINT)
         {
-            terrain_paint(t, p1);
+            vec2 d = vec2_sub(p2,p1);
+            f32 l = vec2_length(d);
+            f32 iv = 1.0f / l;
+            
+            vec2_mul_scalar(d, iv);
+            cws_log("%f", iv);
+            for(f32 i = 0; i < 1.0f; i += iv)
+            {
+                terrain_paint(t, (vec2){
+                              .x = p1.x + (d.x * i),
+                              .y = p1.y + (d.y * i)
+                              });
+            }
         }
         update_terrain(t);
     }

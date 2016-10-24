@@ -1,4 +1,4 @@
-/*#version 330
+#version 330
 
 layout (std140) uniform LightData
 {
@@ -19,7 +19,7 @@ layout (std140) uniform LightData
 	vec4 spotlights_intensity[16];
 	vec4 spotlights_conedata[16];
 };
-*/
+
 uniform sampler2D tex0;
 uniform mat4 model_matrix;
 
@@ -31,7 +31,7 @@ uniform sampler2D EE_spotlights_shadow_map[8];
 out vec4 finalColor;
 in vec2 Uv;
 in vec3 Color;
-//in vec3 Normal;
+in vec3 Normal;
 in vec3 Pos;
 in vec4 P_Pos;
 
